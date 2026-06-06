@@ -48,7 +48,7 @@ fun GamePlannerTheme(
 ) {
     MaterialTheme(
         colorScheme = GamePlannerColorScheme,
-        typography = GamePlannerTypography(),  // from step 4
+        typography = gamePlannerTypography(),  // from step 4
         shapes = GamePlannerShapes,          // from step 5
         content = content
     )

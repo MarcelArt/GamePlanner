@@ -57,7 +57,10 @@ kotlin {
             implementation(libs.sqlite.bundled)
             implementation(libs.voyager.navigator)
             implementation(libs.voyager.screenModel)
-            
+            implementation(libs.filekit.core)
+            implementation(libs.filekit.dialogs)
+            implementation(libs.filekit.dialogs.compose)
+            implementation(libs.filekit.coil)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -72,4 +75,15 @@ dependencies {
 //    add("kspIosX64", libs.room.compiler)
     add("kspIosArm64", libs.room.compiler)
     add("kspIosSimulatorArm64", libs.room.compiler)
+}
+
+compose.desktop {
+    application {
+        nativeDistributions {
+            linux {
+                modules("jdk.security.auth")
+            }
+        }
+    }
+
 }

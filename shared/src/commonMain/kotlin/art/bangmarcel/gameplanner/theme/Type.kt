@@ -14,7 +14,7 @@ import gameplanner.shared.generated.resources.Res
 import org.jetbrains.compose.resources.FontResource
 
 @Composable
-fun GamePlannerTypography(): Typography {
+fun gamePlannerTypography(): Typography {
     val interFamily = FontFamily(
         org.jetbrains.compose.resources.Font(Res.font.Inter)
     )

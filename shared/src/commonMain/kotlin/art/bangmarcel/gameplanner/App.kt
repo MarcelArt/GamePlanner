@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import art.bangmarcel.gameplanner.configs.initFileKit
 import art.bangmarcel.gameplanner.database.createDatabase
 import art.bangmarcel.gameplanner.repositories.GameRepo
 import art.bangmarcel.gameplanner.screens.GameListScreen
@@ -28,6 +29,7 @@ import gameplanner.shared.generated.resources.compose_multiplatform
 @Composable
 @Preview
 fun App() {
+    initFileKit()
     GamePlannerTheme {
         val db = remember { createDatabase() }
         val gRepo = remember { GameRepo(db.gameDao()) }
