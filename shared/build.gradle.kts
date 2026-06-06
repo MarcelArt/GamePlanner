@@ -57,6 +57,7 @@ kotlin {
             implementation(libs.sqlite.bundled)
             implementation(libs.voyager.navigator)
             implementation(libs.voyager.screenModel)
+            
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
