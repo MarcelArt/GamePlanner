@@ -17,6 +17,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import art.bangmarcel.gameplanner.database.createDatabase
 import art.bangmarcel.gameplanner.repositories.GameRepo
 import art.bangmarcel.gameplanner.screens.GameListScreen
+import art.bangmarcel.gameplanner.theme.GamePlannerTheme
 import art.bangmarcel.gameplanner.viewmodels.GameListViewModel
 import cafe.adriel.voyager.navigator.Navigator
 import org.jetbrains.compose.resources.painterResource
@@ -27,7 +28,7 @@ import gameplanner.shared.generated.resources.compose_multiplatform
 @Composable
 @Preview
 fun App() {
-    MaterialTheme {
+    GamePlannerTheme {
         val db = remember { createDatabase() }
         val gRepo = remember { GameRepo(db.gameDao()) }
 
