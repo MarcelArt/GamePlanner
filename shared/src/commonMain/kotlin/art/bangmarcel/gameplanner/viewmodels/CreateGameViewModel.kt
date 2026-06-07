@@ -1,6 +1,7 @@
 package art.bangmarcel.gameplanner.viewmodels
 
 import androidx.compose.material3.Text
+import art.bangmarcel.gameplanner.entitties.GameEntity
 import art.bangmarcel.gameplanner.repositories.GameRepo
 import cafe.adriel.voyager.core.model.ScreenModel
 import cafe.adriel.voyager.core.model.screenModelScope
@@ -30,6 +31,20 @@ class CreateGameViewModel(private val repo: GameRepo) : ScreenModel {
             val newFile = PlatformFile(FileKit.filesDir, file.name)
             file.copyTo(newFile)
             _isLoadingPicture.value = false
+        }
+    }
+
+    fun createGame(name: String, picture: PlatformFile?, onSuccess: () -> Unit) {
+        screenModelScope.launch {
+            var picturePath: String = ""
+            if (picture != null) {
+                val newFile = PlatformFile(FileKit.filesDir, picture.name)
+                picture.copyTo(newFile)
+                picturePath = newFile.path
+            }
+
+            repo.create(GameEntity(name = name, picture = picturePath))
+            onSuccess()
         }
     }
 

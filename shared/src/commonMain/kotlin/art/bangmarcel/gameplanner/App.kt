@@ -9,11 +9,21 @@ import art.bangmarcel.gameplanner.repositories.GameRepo
 import art.bangmarcel.gameplanner.screens.GameListScreen
 import cafe.adriel.voyager.navigator.Navigator
 import art.bangmarcel.gameplanner.theme.AppTheme
+import coil3.ImageLoader
+import coil3.compose.setSingletonImageLoaderFactory
+import io.github.vinceglb.filekit.coil.addPlatformFileSupport
 
 @Composable
 @Preview
 fun App() {
     initFileKit()
+    setSingletonImageLoaderFactory { context ->
+        ImageLoader.Builder(context)
+            .components {
+                addPlatformFileSupport()
+            }
+            .build()
+    }
     AppTheme {
         val db = remember { createDatabase() }
         val gRepo = remember { GameRepo(db.gameDao()) }
