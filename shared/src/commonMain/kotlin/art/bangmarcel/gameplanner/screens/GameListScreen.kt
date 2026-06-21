@@ -28,24 +28,25 @@ import art.bangmarcel.gameplanner.repositories.GameRepo
 import art.bangmarcel.gameplanner.viewmodels.GameListViewModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import gameplanner.shared.generated.resources.Res
 import gameplanner.shared.generated.resources.add_24px
 import org.jetbrains.compose.resources.painterResource
 
-class GameListScreen(private val repo: GameRepo) : Screen {
+class GameListScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val viewModel = rememberScreenModel { GameListViewModel(repo) }
+        val viewModel = koinScreenModel<GameListViewModel>()
         val games by viewModel.gameState.collectAsStateWithLifecycle()
 
         Scaffold(
             floatingActionButton = {
                 FloatingActionButton(
                     onClick = {
-                        navigator.push(CreateGameScreen(repo))
+                        navigator.push(CreateGameScreen())
                     },
                 ) {
                     Icon(
@@ -153,4 +154,5 @@ private fun PlaceholderImage() {
 @Composable
 private fun GameImage(picturePath: String) {
     // This depends on your image loading strategy — see notes below
+    println(picturePath)
 }

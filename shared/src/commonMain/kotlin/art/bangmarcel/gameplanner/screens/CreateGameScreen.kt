@@ -42,6 +42,7 @@ import art.bangmarcel.gameplanner.repositories.GameRepo
 import art.bangmarcel.gameplanner.viewmodels.CreateGameViewModel
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.koin.koinScreenModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
@@ -58,20 +59,15 @@ import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.readBytes
 import org.jetbrains.compose.resources.painterResource
 
-class CreateGameScreen(private val repo: GameRepo): Screen {
+class CreateGameScreen: Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         var name by remember { mutableStateOf("") }
-        val coroutineScope = rememberCoroutineScope()
-        var statusMessage by remember { mutableStateOf("No file selected") }
-        val viewModel = rememberScreenModel { CreateGameViewModel(repo) }
-        val destPicture by viewModel.destPicture.collectAsState()
-        val srcPicture by viewModel.srcPicture.collectAsState()
+        val viewModel = koinScreenModel<CreateGameViewModel>()
         var picture by remember { mutableStateOf<PlatformFile?>(null) }
 
         val launcher = rememberFilePickerLauncher(type = FileKitType.Image) { file ->
-//            viewModel.readPicture(file)
             picture = file
         }
 

@@ -43,8 +43,6 @@ kotlin {
             implementation(libs.compose.uiToolingPreview)
         }
         commonMain.dependencies {
-            val voyagerVersion = "1.1.0-beta02"
-
             implementation(libs.compose.runtime)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material3)
@@ -57,10 +55,12 @@ kotlin {
             implementation(libs.sqlite.bundled)
             implementation(libs.voyager.navigator)
             implementation(libs.voyager.screenModel)
+            implementation(libs.voyager.koin)
             implementation(libs.filekit.core)
             implementation(libs.filekit.dialogs)
             implementation(libs.filekit.dialogs.compose)
             implementation(libs.filekit.coil)
+            implementation(libs.koin.compose)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
