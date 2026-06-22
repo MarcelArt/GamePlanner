@@ -1,6 +1,7 @@
 package art.bangmarcel.gameplanner.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,8 +14,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Label
@@ -47,7 +55,7 @@ import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
 import gameplanner.shared.generated.resources.Res
-import gameplanner.shared.generated.resources.arrow_back_ios_new_24px
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.absolutePath
@@ -71,73 +79,142 @@ class CreateGameScreen: Screen {
             picture = file
         }
 
+        val scrollState = rememberScrollState()
+
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Create Game") },
-                    navigationIcon = {
-                        IconButton(onClick = { navigator.pop() }) {
-                            Icon(
-                                painterResource(Res.drawable.arrow_back_ios_new_24px),
-                                contentDescription = "Back"
-                            )
-                        }
-                    }
+                    title = { Text("Create Game") }
                 )
             },
         ) { paddingValues ->
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .padding(16.dp)
-                    .background(MaterialTheme.colorScheme.surface)
+                    .background(MaterialTheme.colorScheme.surface),
+                contentAlignment = Alignment.TopCenter
             ) {
-                Text("Game Picture")
-                Card(
+                Column(
                     modifier = Modifier
+                        .widthIn(max = 640.dp)
                         .fillMaxWidth()
-                        .padding(8.dp)
-                        .clickable {
-                            launcher.launch()
-                        }
+                        .verticalScroll(scrollState)
+                        .padding(16.dp)
                 ) {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        if (picture != null) {
-                            AsyncImage(
-                                model = picture,
-                                contentDescription = "Game Picture",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop,
+                    // Game Picture Header
+                    Text(
+                        text = "GAME COVER IMAGE",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    // Aspect ratio constrained upload card
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(16f / 9f)
+                            .clip(MaterialTheme.shapes.medium)
+                            .border(
+                                width = 1.dp,
+                                color = MaterialTheme.colorScheme.outlineVariant,
+                                shape = MaterialTheme.shapes.medium
                             )
-                        } else {
-                            Text("Upload picture")
+                            .clickable {
+                                launcher.launch()
+                            },
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        )
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            if (picture != null) {
+                                AsyncImage(
+                                    model = picture,
+                                    contentDescription = "Game Picture",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop,
+                                )
+                            } else {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier.padding(16.dp)
+                                ) {
+                                    Text(
+                                        text = "🖼️", // Frame/Image Emoji
+                                        style = MaterialTheme.typography.displayLarge.copy(
+                                            fontSize = MaterialTheme.typography.displayLarge.fontSize * 0.8f
+                                        )
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "Upload cover image",
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "PNG or JPG (16:9 recommended)",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
                         }
                     }
-                }
 
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = name,
-                    label = { Text("Game Title") },
-                    onValueChange = { name = it }
-                )
-                Spacer(Modifier.size(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    Button(
-                        onClick = {
-                            viewModel.createGame(name, picture) {
-                                navigator.pop()
-                            }
-                        },
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Game Title Header
+                    Text(
+                        text = "DETAILS",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        value = name,
+                        label = { Text("Game Title") },
+                        onValueChange = { name = it },
+                        singleLine = true,
+                        shape = MaterialTheme.shapes.small,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                        )
+                    )
+
+                    Spacer(Modifier.height(24.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
                     ) {
-                        Text("Create")
+                        Button(
+                            onClick = {
+                                viewModel.createGame(name, picture) {
+                                    navigator.pop()
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            shape = MaterialTheme.shapes.small
+                        ) {
+                            Text("Create Game")
+                        }
                     }
                 }
             }
