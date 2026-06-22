@@ -7,9 +7,11 @@ import art.bangmarcel.gameplanner.configs.initFileKit
 import art.bangmarcel.gameplanner.configs.initKoin
 import art.bangmarcel.gameplanner.database.createDatabase
 import art.bangmarcel.gameplanner.repositories.GameRepo
+import art.bangmarcel.gameplanner.screens.GameListLayoutScreen
 import art.bangmarcel.gameplanner.screens.GameListScreen
 import cafe.adriel.voyager.navigator.Navigator
 import art.bangmarcel.gameplanner.theme.AppTheme
+import art.bangmarcel.gameplanner.viewmodels.GameListLayoutViewModel
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import io.github.vinceglb.filekit.coil.addPlatformFileSupport
@@ -27,6 +29,6 @@ fun App() {
     }
     initKoin()
     AppTheme {
-        Navigator(GameListScreen())
+        Navigator(GameListLayoutScreen())
     }
 }
