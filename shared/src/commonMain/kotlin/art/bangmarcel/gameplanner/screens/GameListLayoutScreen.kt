@@ -6,24 +6,24 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import art.bangmarcel.gameplanner.entitties.GameEntity
+import art.bangmarcel.gameplanner.screens.game.GameLayoutScreen
 import art.bangmarcel.gameplanner.viewmodels.GameListLayoutViewModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.koin.koinScreenModel
+import cafe.adriel.voyager.navigator.CurrentScreen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import coil3.compose.AsyncImage
 import gameplanner.shared.generated.resources.Res
@@ -35,374 +35,330 @@ class GameListLayoutScreen : Screen {
     override fun Content() {
         val viewModel = koinScreenModel<GameListLayoutViewModel>()
         val games by viewModel.data.collectAsStateWithLifecycle()
+        val parentNavigator = LocalNavigator.currentOrThrow
 
-        SidebarLayout(games) { game ->
-            GameDetailsView(game)
+        var searchQuery by remember { mutableStateOf("") }
+        val filteredGames = remember(games, searchQuery) {
+            games.filter { it.name.contains(searchQuery, ignoreCase = true) }
         }
-    }
-}
 
-@Composable
-private fun SidebarLayout(
-    data: List<GameEntity>,
-    content: @Composable ((game: GameEntity) -> Unit)
-) {
-    val navigator = LocalNavigator.currentOrThrow
-    var selectedGame by remember { mutableStateOf<GameEntity?>(null) }
-    
-    val currentSelected = remember(data, selectedGame) {
-        val resolved = selectedGame ?: data.firstOrNull()
-        if (resolved != null && data.any { it.id == resolved.id }) {
-            resolved
-        } else {
-            data.firstOrNull()
-        }
-    }
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            val isWideScreen = maxWidth >= 600.dp
 
-    Row(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        // Sidebar Left
-        Column(
-            modifier = Modifier
-                .width(300.dp)
-                .fillMaxHeight()
-                .background(MaterialTheme.colorScheme.surfaceContainerLow)
-        ) {
-            // Sidebar Header
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 24.dp)
-            ) {
-                Text(
-                    text = "GAME PLANNER",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Saved Games",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-            }
+            if (isWideScreen) {
+                // Desktop Split-Pane Layout
+                var selectedGameId by remember { mutableStateOf<String?>(null) }
+                var previousGames by remember { mutableStateOf<List<GameEntity>>(emptyList()) }
 
-            // Scrollable List of Games
-            if (data.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "No saved games",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                LaunchedEffect(games) {
+                    if (selectedGameId == "CREATE_NEW" && games.size > previousGames.size) {
+                        val newGame = games.firstOrNull { g -> previousGames.none { it.id == g.id } }
+                        if (newGame != null) {
+                            selectedGameId = newGame.id
+                        }
+                    }
+                    previousGames = games
+                }
+
+                Row(modifier = Modifier.fillMaxSize()) {
+                    // Sidebar
+                    Column(
+                        modifier = Modifier
+                            .width(280.dp)
+                            .fillMaxHeight()
+                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    ) {
+                        // Title
+                        Text(
+                            text = "GAME TRACKERS",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.outline,
+                            modifier = Modifier.padding(
+                                start = 16.dp,
+                                end = 16.dp,
+                                top = 20.dp,
+                                bottom = 4.dp
+                            )
+                        )
+
+                        // Search box
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("Search games...") },
+                            singleLine = true,
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            shape = MaterialTheme.shapes.small,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                            )
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                        // Games List
+                        if (filteredGames.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = if (searchQuery.isEmpty()) "No games yet" else "No matching games",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                            ) {
+                                items(filteredGames) { game ->
+                                    SidebarGameItem(
+                                        game = game,
+                                        isSelected = game.id == selectedGameId,
+                                        onClick = { selectedGameId = game.id }
+                                    )
+                                }
+                            }
+                        }
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                        // Add Game Button at bottom of sidebar
+                        Button(
+                            onClick = { selectedGameId = "CREATE_NEW" },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            ),
+                            shape = MaterialTheme.shapes.small
+                        ) {
+                            Icon(
+                                painter = painterResource(Res.drawable.add_24px),
+                                contentDescription = "Add Game",
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Add Game", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold))
+                        }
+                    }
+
+                    // Vertical Divider
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .width(1.dp)
+                            .background(MaterialTheme.colorScheme.outlineVariant)
                     )
+
+                    // Right detail pane (nested navigator)
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                    ) {
+                        Navigator(NotSelectedGameScreen()) { nestedNavigator ->
+                            LaunchedEffect(selectedGameId, games) {
+                                when (selectedGameId) {
+                                    null -> nestedNavigator.replaceAll(NotSelectedGameScreen())
+                                    "CREATE_NEW" -> {
+                                        if (nestedNavigator.lastItem !is CreateGameScreen) {
+                                            nestedNavigator.push(CreateGameScreen())
+                                        }
+                                    }
+                                    else -> {
+                                        val currentSelected = games.find { it.id == selectedGameId }
+                                        if (currentSelected != null) {
+                                            nestedNavigator.replaceAll(GameLayoutScreen(currentSelected))
+                                        } else {
+                                            nestedNavigator.replaceAll(NotSelectedGameScreen())
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Synchronize backstack pop state to update parent selectedGameId
+                            val currentScreen = nestedNavigator.lastItem
+                            LaunchedEffect(currentScreen) {
+                                if (selectedGameId == "CREATE_NEW" && currentScreen !is CreateGameScreen) {
+                                    selectedGameId = (currentScreen as? GameLayoutScreen)?.game?.id
+                                }
+                            }
+
+                            CurrentScreen()
+                        }
+                    }
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    items(data, key = { it.id }) { game ->
-                        val isSelected = game.id == currentSelected?.id
-                        SidebarItem(
-                            game = game,
-                            isSelected = isSelected,
-                            onClick = { selectedGame = game }
+                // Mobile Stacked List Layout
+                Scaffold(
+                    floatingActionButton = {
+                        FloatingActionButton(
+                            onClick = { parentNavigator.push(CreateGameScreen()) },
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ) {
+                            Icon(
+                                painter = painterResource(Res.drawable.add_24px),
+                                contentDescription = "Add game"
+                            )
+                        }
+                    }
+                ) { paddingValues ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.surface)
+                            .padding(paddingValues)
+                    ) {
+                        // Title
+                        Text(
+                            text = "GAMES",
+                            style = MaterialTheme.typography.headlineLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(
+                                start = 16.dp,
+                                end = 16.dp,
+                                top = 20.dp,
+                                bottom = 8.dp
+                            )
                         )
+
+                        // Search box
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("Search games...") },
+                            singleLine = true,
+                            textStyle = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            shape = MaterialTheme.shapes.small,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                            )
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+                        // Games List
+                        if (filteredGames.isEmpty()) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = if (searchQuery.isEmpty()) "No games yet. Tap '+' to create one." else "No matching games",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                items(filteredGames) { game ->
+                                    SidebarGameItem(
+                                        game = game,
+                                        isSelected = false,
+                                        onClick = { parentNavigator.push(GameLayoutScreen(game)) }
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
-
-            // Sidebar Footer - Add Game button
-            Button(
-                onClick = { navigator.push(CreateGameScreen()) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                shape = MaterialTheme.shapes.medium,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            ) {
-                Icon(
-                    painter = painterResource(Res.drawable.add_24px),
-                    contentDescription = "Add game",
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Add Game", style = MaterialTheme.typography.labelMedium)
-            }
-        }
-
-        // Divider
-        Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(1.dp)
-                .background(MaterialTheme.colorScheme.outlineVariant)
-        )
-
-        // Main Content Area Right
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .background(MaterialTheme.colorScheme.background)
-        ) {
-            if (currentSelected != null) {
-                content(currentSelected)
-            } else {
-                EmptyStateView { navigator.push(CreateGameScreen()) }
-            }
         }
     }
-}
 
-@Composable
-private fun SidebarItem(
-    game: GameEntity,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val containerColor = if (isSelected) {
-        MaterialTheme.colorScheme.secondaryContainer
-    } else {
-        Color.Transparent
-    }
-
-    val contentColor = if (isSelected) {
-        MaterialTheme.colorScheme.onSecondaryContainer
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .background(containerColor)
-            .clickable { onClick() }
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+    @Composable
+    private fun SidebarGameItem(
+        game: GameEntity,
+        isSelected: Boolean,
+        onClick: () -> Unit
     ) {
-        // Thumbnail image
-        if (game.picture.isNotEmpty()) {
-            AsyncImage(
-                model = game.picture,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(MaterialTheme.shapes.extraSmall),
-                contentScale = ContentScale.Crop
-            )
-        } else {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .clickable(onClick = onClick)
+                .background(
+                    if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
+                    else Color.Transparent
+                ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Selected indicator line on the left
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .clip(MaterialTheme.shapes.extraSmall)
+                    .fillMaxHeight()
+                    .width(4.dp)
+                    .background(
+                        if (isSelected) MaterialTheme.colorScheme.primary
+                        else Color.Transparent
+                    )
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Game Image / Placeholder
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(MaterialTheme.shapes.small)
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "\uD83C\uDFAE",
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Text(
-            text = game.name,
-            style = MaterialTheme.typography.bodyLarge,
-            color = contentColor,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-    }
-}
-
-@Composable
-private fun GameDetailsView(game: GameEntity) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp)
-    ) {
-        // Game Title
-        Text(
-            text = game.name,
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Image / Banner Card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(320.dp),
-            shape = MaterialTheme.shapes.medium,
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-            )
-        ) {
-            if (game.picture.isNotEmpty()) {
-                AsyncImage(
-                    model = game.picture,
-                    contentDescription = game.name,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            brush = androidx.compose.ui.graphics.Brush.linearGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.surfaceContainerHigh,
-                                    MaterialTheme.colorScheme.surfaceContainerHighest
-                                )
-                            )
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "\uD83C\uDFAE",
-                            style = MaterialTheme.typography.displayLarge
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "No Banner Image Available",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // Section header
-        Text(
-            text = "PLANNING OVERVIEW",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Card displaying simple game status/planning information
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium,
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "Game Status",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                if (game.picture.isNotEmpty()) {
+                    AsyncImage(
+                        model = game.picture,
+                        contentDescription = game.name,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
                     )
+                } else {
                     Text(
-                        text = "Active Planning",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "ID",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = game.id.take(8) + "...",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = "\uD83C\uDFAE",
+                        style = MaterialTheme.typography.bodyLarge
                     )
                 }
             }
-        }
-    }
-}
 
-@Composable
-private fun EmptyStateView(onAddGameClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "\uD83C\uDFAE",
-                style = MaterialTheme.typography.displayLarge
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
             Text(
-                text = "No Games Added Yet",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                text = game.name,
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
+                ),
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 12.dp)
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Create a game and begin tracking your crafting recipes.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = onAddGameClick,
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Icon(
-                    painter = painterResource(Res.drawable.add_24px),
-                    contentDescription = "Add game",
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Get Started")
-            }
         }
     }
 }
