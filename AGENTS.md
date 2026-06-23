@@ -5,8 +5,10 @@ Package root: `art.bangmarcel.gameplanner`. All app logic lives in `:shared`; `:
 
 ## Hard rules for agents
 
-1. **Edit scope — screens only.** You may only edit files under
-   `shared/src/commonMain/kotlin/art/bangmarcel/gameplanner/screens/`.
+1. **Edit scope — screens and components.** You may only edit files under
+   - `shared/src/commonMain/kotlin/art/bangmarcel/gameplanner/screens/`
+   - `shared/src/commonMain/kotlin/art/bangmarcel/gameplanner/components/`
+
    If a task requires changes to viewmodels, repositories, DAOs, entities, database,
    DI (`configs/DI.kt`), or theme — **stop and tell the user** what needs changing.
    Do not edit those files yourself. (More directories may be opened up later.)

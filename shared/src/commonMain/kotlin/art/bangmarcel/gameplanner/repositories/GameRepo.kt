@@ -10,4 +10,12 @@ class GameRepo(private val dao: GameDao) {
     suspend fun create(game: GameEntity) {
         dao.create(game)
     }
+
+    suspend fun update(game: GameEntity) {
+        dao.update(game)
+    }
+
+    suspend fun getById(id: String): GameEntity? {
+        return dao.getById(id)
+    }
 }

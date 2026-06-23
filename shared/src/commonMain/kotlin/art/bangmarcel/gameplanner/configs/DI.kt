@@ -3,6 +3,7 @@ package art.bangmarcel.gameplanner.configs
 import art.bangmarcel.gameplanner.database.createDatabase
 import art.bangmarcel.gameplanner.repositories.GameRepo
 import art.bangmarcel.gameplanner.viewmodels.CreateGameViewModel
+import art.bangmarcel.gameplanner.viewmodels.GameDetailViewModel
 import art.bangmarcel.gameplanner.viewmodels.GameListLayoutViewModel
 import art.bangmarcel.gameplanner.viewmodels.GameListViewModel
 import org.koin.core.context.startKoin
@@ -19,6 +20,7 @@ fun initKoin() {
         factory { GameListViewModel(get()) }
         factory { CreateGameViewModel(get()) }
         factory { GameListLayoutViewModel(get()) }
+        factory { GameDetailViewModel(get()) }
     }
 
     startKoin {

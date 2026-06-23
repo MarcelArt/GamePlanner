@@ -60,12 +60,12 @@ import io.github.vinceglb.filekit.FileKit
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.absolutePath
 import io.github.vinceglb.filekit.copyTo
-import io.github.vinceglb.filekit.dialogs.FileKitType
-import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.filesDir
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.readBytes
 import org.jetbrains.compose.resources.painterResource
+import art.bangmarcel.gameplanner.components.ImagePickerComponent
+
 
 class CreateGameScreen: Screen {
     @Composable
@@ -74,10 +74,6 @@ class CreateGameScreen: Screen {
         var name by remember { mutableStateOf("") }
         val viewModel = koinScreenModel<CreateGameViewModel>()
         var picture by remember { mutableStateOf<PlatformFile?>(null) }
-
-        val launcher = rememberFilePickerLauncher(type = FileKitType.Image) { file ->
-            picture = file
-        }
 
         val scrollState = rememberScrollState()
 
@@ -111,64 +107,10 @@ class CreateGameScreen: Screen {
                     )
 
                     // Aspect ratio constrained upload card
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(16f / 9f)
-                            .clip(MaterialTheme.shapes.medium)
-                            .border(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.outlineVariant,
-                                shape = MaterialTheme.shapes.medium
-                            )
-                            .clickable {
-                                launcher.launch()
-                            },
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer
-                        )
-                    ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            if (picture != null) {
-                                AsyncImage(
-                                    model = picture,
-                                    contentDescription = "Game Picture",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop,
-                                )
-                            } else {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center,
-                                    modifier = Modifier.padding(16.dp)
-                                ) {
-                                    Text(
-                                        text = "🖼️", // Frame/Image Emoji
-                                        style = MaterialTheme.typography.displayLarge.copy(
-                                            fontSize = MaterialTheme.typography.displayLarge.fontSize * 0.8f
-                                        )
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        text = "Upload cover image",
-                                        style = MaterialTheme.typography.bodyMedium.copy(
-                                            fontWeight = FontWeight.Bold
-                                        ),
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "PNG or JPG (16:9 recommended)",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    }
+                    ImagePickerComponent(
+                        selectedFile = picture,
+                        onFileSelected = { picture = it }
+                    )
 
                     Spacer(modifier = Modifier.height(24.dp))
 
